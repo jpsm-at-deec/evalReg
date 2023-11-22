@@ -8,22 +8,12 @@ import open3d.visualization.gui as gui
 from os.path import isfile, exists, join, splitext
 from os import listdir
 
-class FakeCamera:
+
+class FakeDetector:
     def __init__(self):
-        path_to_config = "./data/readrosbag.json"
-        with open(path_to_config) as json_file:
-            config = json.load(json_file)
-            self.initialize_config(config)
-            self.check_folder_structure(config['path_dataset'])
+        self.setup()
 
-        config['debug_mode'] = False
-        config['device'] = 'cpu:0'
-
-        self.config = config
-        [self.color_files, self.depth_files] = self.get_rgbd_file_lists(self.config["path_dataset"])
-        self.n_files = len(self.color_files)
-        self.ii = 0
-
+    def setup(self):
         self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         self.parameters =  cv2.aruco.DetectorParameters()
         self.parameters.minDistanceToBorder =  1
@@ -46,6 +36,75 @@ class FakeCamera:
     
         self.k = np.load(calibration_matrix_path)
         self.d = np.load(distortion_coefficients_path)
+
+    def pose_estimation(self,frame, aruco_dict_type, matrix_coefficients, distortion_coefficients) ->	np.ndarray:
+
+        """
+        pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coefficients)
+
+        pose estimation of Aruco markers
+
+        Parameters
+        ----------
+        frame : np.ndarray
+            input image.
+        aruco_dict_type : np.ndarray
+            dictionary of markers indicating the type of markers.
+        matrix_coefficients : np.ndarray
+            intrinsic matrix of the calibrated camera.
+        distortion_coefficients : np.ndarray
+            distortion coefficients associated with the camera.
+
+        Returns
+        -------
+        np.ndarray
+            input image with the axis of the detected Aruco markers drawn on it
+        """
+
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        corners, ids, rejected_img_points = self.detector.detectMarkers(gray)
+
+        # If markers are detected
+        if len(corners) > 0:
+            for i in range(0, len(ids)):
+                # Estimate pose of each marker and return the values rvec and tvec---(different from those of camera coefficients)
+                rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], 0.02, matrix_coefficients,
+                                                                            distortion_coefficients)
+                # Draw a square around the markers
+                cv2.aruco.drawDetectedMarkers(frame, corners) 
+
+                # Draw Axis
+                #cv2.aruco.drawAxis(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  
+                frame = cv2.drawFrameAxes( frame, matrix_coefficients, distortion_coefficients, rvec, tvec, length=0.01 )
+
+        return frame
+
+    def get_detector(self):
+        return self
+
+class FakeCamera:
+    def __init__(self):
+        path_to_config = "./data/readrosbag.json"
+        with open(path_to_config) as json_file:
+            config = json.load(json_file)
+            self.initialize_config(config)
+            self.check_folder_structure(config['path_dataset'])
+
+        config['debug_mode'] = False
+        config['device'] = 'cpu:0'
+
+        self.ii = 0
+
+        self.config = config
+
+        [self.color_files, self.depth_files] = self.get_rgbd_file_lists(self.config["path_dataset"])
+        self.n_files = len(self.color_files)
+        
+        temp_det = FakeDetector()
+        self.detector = temp_det.get_detector()
+
+        
 
     def sorted_alphanum(self, file_list_ordered):
         convert = lambda text: int(text) if text.isdigit() else text
@@ -196,51 +255,10 @@ class FakeCamera:
     def showcolor(self):
        
         img_out = self.color_img.copy()
-        output = self.pose_estimation(img_out, cv2.aruco.DICT_4X4_50, self.k, self.d)
+        output = self.detector.pose_estimation(img_out, cv2.aruco.DICT_4X4_50, self.detector.k, self.detector.d)
         cv2.imshow("color", output)
 
-    def pose_estimation(self,frame, aruco_dict_type, matrix_coefficients, distortion_coefficients) ->	np.ndarray:
-
-        """
-        pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coefficients)
-
-        pose estimation of Aruco markers
-
-        Parameters
-        ----------
-        frame : np.ndarray
-            input image.
-        aruco_dict_type : np.ndarray
-            dictionary of markers indicating the type of markers.
-        matrix_coefficients : np.ndarray
-            intrinsic matrix of the calibrated camera.
-        distortion_coefficients : np.ndarray
-            distortion coefficients associated with the camera.
-
-        Returns
-        -------
-        np.ndarray
-            input image with the axis of the detected Aruco markers drawn on it
-        """
-
-
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        corners, ids, rejected_img_points = self.detector.detectMarkers(gray)
-
-        # If markers are detected
-        if len(corners) > 0:
-            for i in range(0, len(ids)):
-                # Estimate pose of each marker and return the values rvec and tvec---(different from those of camera coefficients)
-                rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], 0.02, matrix_coefficients,
-                                                                            distortion_coefficients)
-                # Draw a square around the markers
-                cv2.aruco.drawDetectedMarkers(frame, corners) 
-
-                # Draw Axis
-                #cv2.aruco.drawAxis(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  
-                frame = cv2.drawFrameAxes( frame, matrix_coefficients, distortion_coefficients, rvec, tvec, length=0.01 )
-
-        return frame
+    
 
     def getimg(self):
         self.color_img = self.read_image(self.color_files[self.ii], 0)
