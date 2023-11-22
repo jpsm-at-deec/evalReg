@@ -8,3 +8,5 @@ source /path/to/new/virtual/environment/bin/activate
 pip install -r requirements.txt
 python test_transform_manager.py
 ```
+
+![screenshot](data/screenshot.png)
