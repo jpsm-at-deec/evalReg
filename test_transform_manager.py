@@ -196,12 +196,7 @@ class FakeCamera:
     def showcolor(self):
        
         img_out = self.color_img.copy()
-
-
-
         output = self.pose_estimation(img_out, cv2.aruco.DICT_4X4_50, self.k, self.d)
-        
-        #cv2.imshow("color", img_out)
         cv2.imshow("color", output)
 
     def pose_estimation(self,frame, aruco_dict_type, matrix_coefficients, distortion_coefficients) ->	np.ndarray:
@@ -265,10 +260,12 @@ class FakeCamera:
 
 class Experiment:
     def __init__(self):
-        self.main()
+        self.setup()
 
-    def main(self):        
+    def setup(self):        
         self.ccamera = FakeCamera() 
+
+    def run(self):    
         gui.Application.instance.initialize()
 
         self.window = gui.Application.instance.create_window('3d', width=640, height=480)
@@ -281,4 +278,4 @@ class Experiment:
 
 if __name__ == "__main__":
     probetrial = Experiment()
-    probetrial.main()
+    probetrial.run()
