@@ -37,7 +37,7 @@ class FakeDetector:
         self.k = np.load(calibration_matrix_path)
         self.d = np.load(distortion_coefficients_path)
 
-    def pose_estimation(self,frame, aruco_dict_type, matrix_coefficients, distortion_coefficients) ->	np.ndarray:
+    def pose_estimation(self,frame, aruco_dict_type=None, matrix_coefficients=None, distortion_coefficients=None) ->	np.ndarray:
 
         """
         pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coefficients)
@@ -61,6 +61,12 @@ class FakeDetector:
             input image with the axis of the detected Aruco markers drawn on it
         """
 
+        if aruco_dict_type is None:
+            aruco_dict_type = cv2.aruco.DICT_4X4_50
+        if matrix_coefficients is None:
+            matrix_coefficients = self.k
+        if distortion_coefficients is None:
+            distortion_coefficients = self.d
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         corners, ids, rejected_img_points = self.detector.detectMarkers(gray)
@@ -255,7 +261,7 @@ class FakeCamera:
     def showcolor(self):
        
         img_out = self.color_img.copy()
-        output = self.detector.pose_estimation(img_out, cv2.aruco.DICT_4X4_50, self.detector.k, self.detector.d)
+        output = self.detector.pose_estimation(img_out)#, cv2.aruco.DICT_4X4_50, self.detector.k, self.detector.d)
         cv2.imshow("color", output)
 
     
