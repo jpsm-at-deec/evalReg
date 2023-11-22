@@ -89,6 +89,21 @@ class FakeDetector:
     def get_detector(self):
         return self
 
+    def showdepth(self, input_depth_img):
+        cimg = input_depth_img.copy()
+        cimg = cimg / (2.0**12.0)
+        cimg = 255.0 * cimg
+        cimg = cimg.astype(np.uint8)
+        cimg = cv2.applyColorMap(cimg, cv2.COLORMAP_JET)
+
+        cv2.imshow("depth", cimg)
+
+    def showcolor(self, input_color_img):
+       
+        img_out = input_color_img.copy()
+        output = self.pose_estimation(img_out)#, cv2.aruco.DICT_4X4_50, self.detector.k, self.detector.d)
+        cv2.imshow("color", output)
+
 class FakeCamera:
     def __init__(self):
         path_to_config = "./data/readrosbag.json"
@@ -107,8 +122,8 @@ class FakeCamera:
         [self.color_files, self.depth_files] = self.get_rgbd_file_lists(self.config["path_dataset"])
         self.n_files = len(self.color_files)
         
-        temp_det = FakeDetector()
-        self.detector = temp_det.get_detector()
+        #temp_det = FakeDetector()
+        #self.detector = temp_det.get_detector()
 
         
 
@@ -249,45 +264,72 @@ class FakeCamera:
         #print(image.dtype)
         return image
 
-    def showdepth(self):
-        cimg = self.depth_img.copy()
-        cimg = cimg / (2.0**12.0)
-        cimg = 255.0 * cimg
-        cimg = cimg.astype(np.uint8)
-        cimg = cv2.applyColorMap(cimg, cv2.COLORMAP_JET)
 
-        cv2.imshow("depth", cimg)
-
-    def showcolor(self):
-       
-        img_out = self.color_img.copy()
-        output = self.detector.pose_estimation(img_out)#, cv2.aruco.DICT_4X4_50, self.detector.k, self.detector.d)
-        cv2.imshow("color", output)
 
     
 
-    def getimg(self):
+    def getimgs(self):
         self.color_img = self.read_image(self.color_files[self.ii], 0)
         self.depth_img = self.read_image(self.depth_files[self.ii], 1)
 
-        wallo = self.color_img.copy()
+        walla = self.color_img.copy()
+        wallo = self.depth_img.copy()
 
-        self.showdepth()
-        self.showcolor()
-        k = cv2.waitKey(30)
+        #self.showdepth()
+        #self.showcolor()
+        #k = cv2.waitKey(30)
 
         self.ii += 1
         if (self.ii == self.n_files):
             self.ii = 0
 
-        return wallo
+        return walla, wallo
+
+class FakeBoard:
+    def __init__(self):
+        self.setup()
+
+    def setup(self):
+        self.group_a = {
+            '23':0,
+            '19':1,
+            '20':2,
+            '31':3,
+            '29':4,
+            '18':5,
+            '24':6,
+            '28':7,
+            '34':8,
+            '11':9,
+            '13':10,
+            '15':11
+        }
+        self.group_b = {
+            '5' :0,
+            '36':1,
+            '8' :2,
+            '2' :3,
+            '26':4,
+            '7' :5,
+            '3' :6,
+            '25':7,
+            '1' :8,
+            '6' :9,
+            '27':10,
+            '12':11
+        }
+
+       
+        
 
 class Experiment:
     def __init__(self):
         self.setup()
 
     def setup(self):        
-        self.ccamera = FakeCamera() 
+        self.c_camera = FakeCamera()
+        self.c_detector = FakeDetector() 
+        self.c_board = FakeBoard() 
 
     def run(self):    
         gui.Application.instance.initialize()
@@ -298,7 +340,10 @@ class Experiment:
 
     def thread_main(self):
         while True:
-            currenti = self.ccamera.getimg()
+            current_color, current_depth = self.c_camera.getimgs()
+            self.c_detector.showdepth(current_depth)
+            self.c_detector.showcolor(current_color)
+            kk = cv2.waitKey(30)
 
 if __name__ == "__main__":
     probetrial = Experiment()
