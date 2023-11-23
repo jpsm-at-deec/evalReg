@@ -7,7 +7,7 @@ import re
 import open3d.visualization.gui as gui
 from os.path import isfile, exists, join, splitext
 from os import listdir
-
+from pytransform3d.transform_manager import TransformManager
 
 class FakeDetector:
     def __init__(self):
@@ -61,7 +61,10 @@ class FakeDetector:
         -------
         np.ndarray
             input image with the axis of the detected Aruco markers drawn on it
+        dictionary
+            output detections stuff (namely the R matrix and t vector from aruco pose)
         """
+        myDict = {}
 
         if aruco_dict_type is None:
             aruco_dict_type = cv2.aruco.DICT_5X5_100
@@ -74,11 +77,15 @@ class FakeDetector:
         corners, ids, rejected_img_points = self.detector.detectMarkers(gray)
 
         # If markers are detected
+        myDict = dict()
         if len(corners) > 0:
             for i in range(0, len(ids)):
                 # Estimate pose of each marker and return the values rvec and tvec---(different from those of camera coefficients)
                 rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], self.printedsizeofmarker, matrix_coefficients,
                                                                             distortion_coefficients)
+                
+                localkey = ids[i]               
+                myDict[str(localkey[0])]=(rvec, tvec)
                 
                 #print(cv2.Rodrigues(rvec))
                 # Draw a square around the markers
@@ -88,7 +95,8 @@ class FakeDetector:
                 #cv2.aruco.drawAxis(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  
                 frame = cv2.drawFrameAxes( frame, matrix_coefficients, distortion_coefficients, rvec, tvec, length=0.01 )
 
-        return frame
+        #print(myDict)
+        return frame, myDict
 
     def get_detector(self):
         return self
@@ -105,8 +113,10 @@ class FakeDetector:
     def showcolor(self, input_color_img):
        
         img_out = input_color_img.copy()
-        output = self.pose_estimation(img_out)#, cv2.aruco.DICT_4X4_50, self.detector.k, self.detector.d)
+        output, dictout = self.pose_estimation(img_out)#, cv2.aruco.DICT_4X4_50, self.detector.k, self.detector.d)
         cv2.imshow("color", output)
+
+        return dictout
 
 class FakeCamera:
     def __init__(self):
@@ -318,6 +328,8 @@ class FakeBoard:
             '25':10,
             '26':11
         }
+        self.tm = TransformManager()
+
 
        
         
@@ -342,7 +354,8 @@ class Experiment:
         while True:
             current_color, current_depth = self.c_camera.getimgs()
             self.c_detector.showdepth(current_depth)
-            self.c_detector.showcolor(current_color)
+            current_det_dict = self.c_detector.showcolor(current_color)
+            print(current_det_dict)
             kk = cv2.waitKey(30)
 
 if __name__ == "__main__":
