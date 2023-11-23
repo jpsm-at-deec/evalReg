@@ -8,6 +8,7 @@ import open3d.visualization.gui as gui
 from os.path import isfile, exists, join, splitext
 from os import listdir
 from pytransform3d.transform_manager import TransformManager
+from pytransform3d import transformations as pt
 
 class FakeDetector:
     def __init__(self):
@@ -333,8 +334,24 @@ class FakeBoard:
     def do_stuff(self, in_stuff):
         f=14
         print(*in_stuff.keys())
-        #for ckey in in_stuff.keys():
-        #    print(ckey, end =" ")
+
+        
+        #tm.add_transform("marker x", "cam", marker2cam)
+        for ckey in in_stuff.keys():
+            aa, bb = in_stuff[ckey]
+            rr_v_to_consider = aa[0][0]
+            tt_v_to_consider = bb[0][0]
+            rr_m_to_consider, pp = cv2.Rodrigues(aa[0][0])
+
+            #print('---')
+            #print(rr_v_to_consider)            
+            #print('---')
+            #print(tt_v_to_consider)
+            #print('---')
+            #print(rr_m_to_consider)
+            #print('---')
+            xx_to_cam = pt.transform_from(rr_m_to_consider,tt_v_to_consider)
+            self.tm.add_transform(ckey, "cam", xx_to_cam)
 
 
 
