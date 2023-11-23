@@ -330,6 +330,13 @@ class FakeBoard:
         }
         self.tm = TransformManager()
 
+    def do_stuff(self, in_stuff):
+        f=14
+        print(*in_stuff.keys())
+        #for ckey in in_stuff.keys():
+        #    print(ckey, end =" ")
+
+
 
        
         
@@ -350,12 +357,17 @@ class Experiment:
         threading.Thread(target=self.thread_main).start()
         gui.Application.instance.run()
 
+    def update_geometry(self):
+        f=14
+
     def thread_main(self):
         while True:
             current_color, current_depth = self.c_camera.getimgs()
             self.c_detector.showdepth(current_depth)
             current_det_dict = self.c_detector.showcolor(current_color)
-            print(current_det_dict)
+            self.c_board.do_stuff(current_det_dict)
+            #print(current_det_dict)
+            gui.Application.instance.post_to_main_thread(self.window, self.update_geometry)
             kk = cv2.waitKey(30)
 
 if __name__ == "__main__":
