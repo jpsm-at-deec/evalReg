@@ -19,8 +19,11 @@ python test_transform_manager.py
 ### D
 ![drawing-1](data/drawing-1.png)
 
-### D
+### E
 ```
 cd aux
 python gen_aruco.py
 ```
+![aruco](aux/out.png)
+
+
