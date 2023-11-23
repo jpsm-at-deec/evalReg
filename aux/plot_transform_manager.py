@@ -8,7 +8,7 @@ automatically.
 """
 import numpy as np
 #import matplotlib
-#matplotlib.use('TkAgg')
+#matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
