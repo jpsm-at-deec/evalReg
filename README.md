@@ -24,4 +24,10 @@ python gen_aruco.py
 ```
 ![aruco](aux/out.png)
 
+### F
+```
+cd aux
+python realsense_recorder.py --record_imgs
+```
+
 
