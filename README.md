@@ -2,14 +2,18 @@
 
 ### A
 ```
+mkdir </path/to/working/space>
+cd </path/to/working/space>
 git clone https://github.com/jpsm-at-deec/evalReg.git
-python3 -m venv /path/to/new/virtual/environment
+python3 -m venv </path/to/new/virtual/environment>
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ### B
 ```
-source /path/to/new/virtual/environment/bin/activate
+cd </path/to/working/space>/evalReg
+source </path/to/new/virtual/environment>/bin/activate
 python test_transform_manager.py
 ```
 ![screenshot](data/screenshot.png)
