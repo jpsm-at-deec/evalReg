@@ -28,9 +28,10 @@ ARUCO_DICT = {
 }
 
 #arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT["DICT_4X4_50"])
-ssize = 150
-arucoDict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
-sel = [1,2,3,4,5,6,7,8,9]
+#ssize = 150
+
+#sel = [1,2,3,4,5,6,7,8,9]
+"""
 for sid in sel:
 	tag = np.zeros((ssize, ssize, 1), dtype="uint8")
 	tag = cv2.aruco.generateImageMarker(arucoDict, sid, ssize, tag, 1)
@@ -47,4 +48,72 @@ for bid in sel2:
 	cv2.imwrite("0"+str(bid)+".png", tag)
 	cv2.imshow("ArUCo Tag", tag)
 	cv2.waitKey(0)
+"""
+arucoDict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
+ww = 2100 
+hh = 2970 
+mm = 15
+ww_u = 7
+hh_u = 5
+size = hh, ww, 1
+m = np.ones(size, dtype=np.uint8)*255
+yunits1 = (hh-mm*2) % ww_u
+xunits1 = (ww-mm*2) % hh_u
+yunits2 = ((hh-mm*2)-((hh-mm*2) % ww_u)) / ww_u
+xunits2 = ((ww-mm*2)-((ww-mm*2) % hh_u)) / hh_u
+#print(yunits1)
+#print(xunits1)
+#print(yunits2)
+#print(xunits2)
+#print(min([yunits2,xunits2]))
+ssize = int(min([yunits2,xunits2]))
+
+
+sel = [1,2,3,4,5,6,8,9,10,11,12,13]
+
+for pos, sid in enumerate(sel):
+	tag = np.zeros((ssize, ssize, 1), dtype="uint8")
+	tag = cv2.aruco.generateImageMarker(arucoDict, sid, ssize, tag, 1)
+
+	if sid == 1:
+		m[mm:mm+ssize,mm:mm+ssize] = tag
+	elif sid == 2:
+		m[mm:mm+ssize,mm+2*ssize:mm+3*ssize] = tag
+	elif sid == 3:
+		m[mm:mm+ssize,mm+4*ssize:mm+5*ssize] = tag
+	elif sid == 4:
+		temv = int(0.5*ssize)
+		m[mm+(ssize*1)+temv:mm+(ssize*2)+temv,mm+ssize:mm+2*ssize] = tag
+	elif sid == 5:
+		temv = int(0.5*ssize)
+		m[mm+(ssize*1)+temv:mm+(ssize*2)+temv,mm+3*ssize:mm+4*ssize] = tag
+	elif sid == 6:
+		m[mm+3*ssize:mm+4*ssize,mm:mm+ssize] = tag
+	#elif sid == 7:
+	#	m[mm+3*ssize:mm+4*ssize,mm+2*ssize:mm+3*ssize] = tag
+	elif sid == 8:
+		m[mm+3*ssize:mm+4*ssize,mm+4*ssize:mm+5*ssize] = tag
+	elif sid == 9:
+		temv = int(0.5*ssize)
+		m[mm+(ssize*4)+temv:mm+(ssize*5)+temv,mm+ssize:mm+2*ssize] = tag
+	elif sid == 10:
+		temv = int(0.5*ssize)
+		m[mm+(ssize*4)+temv:mm+(ssize*5)+temv,mm+3*ssize:mm+4*ssize] = tag
+	elif sid == 11:
+		temv = int(0.5*ssize)
+		m[mm+6*ssize:mm+7*ssize,mm:mm+ssize] = tag
+	elif sid == 12:
+		temv = int(0.5*ssize)
+		m[mm+6*ssize:mm+7*ssize,mm+2*ssize:mm+3*ssize] = tag
+	elif sid == 13:
+		temv = int(0.5*ssize)
+		m[mm+6*ssize:mm+7*ssize,mm+4*ssize:mm+5*ssize] = tag
+
+
+	
+cv2.imwrite("./out.png", m)
+#cv2.imshow("ArUCo Tag", m)
+#cv2.waitKey(30)
+
+
 
