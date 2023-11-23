@@ -7,6 +7,8 @@ In this example, we will use the TransformManager to infer a transformation
 automatically.
 """
 import numpy as np
+#import matplotlib
+#matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from pytransform3d import rotations as pr
 from pytransform3d import transformations as pt
