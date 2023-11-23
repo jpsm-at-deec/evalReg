@@ -14,7 +14,7 @@ class FakeDetector:
         self.setup()
 
     def setup(self):
-        self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
         self.parameters =  cv2.aruco.DetectorParameters()
         self.parameters.minDistanceToBorder =  1
         self.parameters.adaptiveThreshWinSizeMin = 3
@@ -28,6 +28,8 @@ class FakeDetector:
         self.parameters.cornerRefinementMaxIterations = 1500
         self.parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
         self.parameters.useAruco3Detection = True
+
+        self.printedsizeofmarker = 0.02
         
         self.detector = cv2.aruco.ArucoDetector(self.dictionary, self.parameters)
 
@@ -62,7 +64,7 @@ class FakeDetector:
         """
 
         if aruco_dict_type is None:
-            aruco_dict_type = cv2.aruco.DICT_4X4_50
+            aruco_dict_type = cv2.aruco.DICT_5X5_100
         if matrix_coefficients is None:
             matrix_coefficients = self.k
         if distortion_coefficients is None:
@@ -75,10 +77,12 @@ class FakeDetector:
         if len(corners) > 0:
             for i in range(0, len(ids)):
                 # Estimate pose of each marker and return the values rvec and tvec---(different from those of camera coefficients)
-                rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], 0.02, matrix_coefficients,
+                rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], self.printedsizeofmarker, matrix_coefficients,
                                                                             distortion_coefficients)
+                
+                #print(cv2.Rodrigues(rvec))
                 # Draw a square around the markers
-                cv2.aruco.drawDetectedMarkers(frame, corners) 
+                #cv2.aruco.drawDetectedMarkers(frame, corners) 
 
                 # Draw Axis
                 #cv2.aruco.drawAxis(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  
@@ -264,10 +268,6 @@ class FakeCamera:
         #print(image.dtype)
         return image
 
-
-
-    
-
     def getimgs(self):
         self.color_img = self.read_image(self.color_files[self.ii], 0)
         self.depth_img = self.read_image(self.depth_files[self.ii], 1)
@@ -291,32 +291,32 @@ class FakeBoard:
 
     def setup(self):
         self.group_a = {
-            '23':0,
-            '19':1,
-            '20':2,
-            '31':3,
-            '29':4,
-            '18':5,
-            '24':6,
-            '28':7,
-            '34':8,
+            '1':0,
+            '2':1,
+            '3':2,
+            '4':3,
+            '5':4,
+            '6':5,
+            '8':6,
+            '9':7,
+            '10':8,
             '11':9,
-            '13':10,
-            '15':11
+            '12':10,
+            '13':11
         }
         self.group_b = {
-            '5' :0,
-            '36':1,
-            '8' :2,
-            '2' :3,
-            '26':4,
-            '7' :5,
-            '3' :6,
-            '25':7,
-            '1' :8,
-            '6' :9,
-            '27':10,
-            '12':11
+            '14':0,
+            '15':1,
+            '16':2,
+            '17':3,
+            '18':4,
+            '19':5,
+            '21':6,
+            '22':7,
+            '23':8,
+            '24':9,
+            '25':10,
+            '26':11
         }
 
        
