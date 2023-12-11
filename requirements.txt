@@ -16,6 +16,7 @@ charset-normalizer
 comm
 contourpy
 cycler
+dash
 debugpy
 decorator
 defusedxml
@@ -56,6 +57,7 @@ lxml
 MarkupSafe
 matplotlib
 matplotlib-inline
+plotly
 mistune
 nbclassic
 nbclient
@@ -68,15 +70,6 @@ numpy
 open3d
 opencv-contrib-python
 opencv-python
-overrides
-packaging
-pandas
-pandocfilters
-parso
-pexpect
-pickleshare
-Pillow
-pkg_resources
 pkgutil_resolve_name
 platformdirs
 prometheus-client
@@ -88,8 +81,6 @@ pycparser
 Pygments
 pyparsing
 PyQt5
-PyQt5-Qt5
-PyQt5-sip
 pyrealsense2
 python-dateutil
 python-json-logger

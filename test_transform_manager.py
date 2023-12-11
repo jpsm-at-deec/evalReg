@@ -5,10 +5,19 @@ import threading
 import open3d as o3d
 import re
 import open3d.visualization.gui as gui
+import open3d.visualization.rendering as rendering
+
 from os.path import isfile, exists, join, splitext
 from os import listdir
 from pytransform3d.transform_manager import TransformManager
 from pytransform3d import transformations as pt
+from pytransform3d.plot_utils import make_3d_axis
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+
+#import os
+#os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
 class FakeDetector:
     def __init__(self):
@@ -17,20 +26,20 @@ class FakeDetector:
     def setup(self):
         self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
         self.parameters =  cv2.aruco.DetectorParameters()
-        self.parameters.minDistanceToBorder =  1
-        self.parameters.adaptiveThreshWinSizeMin = 3
-        self.parameters.adaptiveThreshWinSizeMax = 15
-        self.parameters.adaptiveThreshWinSizeStep = 3
-        self.parameters.minMarkerPerimeterRate = 0.01
-        self.parameters.maxMarkerPerimeterRate = 8.0
-        self.parameters.minCornerDistanceRate = 0.01
-        self.parameters.minMarkerDistanceRate  = 0.01
-        self.parameters.maxErroneousBitsInBorderRate = 0.65
-        self.parameters.cornerRefinementMaxIterations = 1500
-        self.parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+        #self.parameters.minDistanceToBorder =  1
+        #self.parameters.adaptiveThreshWinSizeMin = 3
+        #self.parameters.adaptiveThreshWinSizeMax = 15
+        #self.parameters.adaptiveThreshWinSizeStep = 3
+        #self.parameters.minMarkerPerimeterRate = 0.01
+        #self.parameters.maxMarkerPerimeterRate = 8.0
+        #self.parameters.minCornerDistanceRate = 0.01
+        #self.parameters.minMarkerDistanceRate  = 0.01
+        #self.parameters.maxErroneousBitsInBorderRate = 0.65
+        #self.parameters.cornerRefinementMaxIterations = 1500
+        #self.parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
         self.parameters.useAruco3Detection = True
 
-        self.printedsizeofmarker = 0.02
+        self.printedsizeofmarker = 0.039
         
         self.detector = cv2.aruco.ArucoDetector(self.dictionary, self.parameters)
 
@@ -74,19 +83,32 @@ class FakeDetector:
         if distortion_coefficients is None:
             distortion_coefficients = self.d
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = frame.copy()
         corners, ids, rejected_img_points = self.detector.detectMarkers(gray)
 
         # If markers are detected
         myDict = dict()
         if len(corners) > 0:
-            for i in range(0, len(ids)):
+            ids = ids.flatten()
+            #print('here')
+            #print(ids)
+            for (markerCorner, markerID) in zip(corners, ids):
+            #for i in range(0, len(ids)):
+                #print('////')
+                #print(markerID)
                 # Estimate pose of each marker and return the values rvec and tvec---(different from those of camera coefficients)
-                rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], self.printedsizeofmarker, matrix_coefficients,
+                rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(markerCorner, self.printedsizeofmarker, matrix_coefficients,
                                                                             distortion_coefficients)
                 
-                localkey = ids[i]               
-                myDict[str(localkey[0])]=(rvec, tvec)
+                localkey = markerID
+
+                #if markerID==13:
+                #    dfghjk
+                #print('----')
+                #print(localkey)
+                #print('----')           
+                myDict[str(markerID)]=(rvec, tvec)
                 
                 #print(cv2.Rodrigues(rvec))
                 # Draw a square around the markers
@@ -109,13 +131,13 @@ class FakeDetector:
         cimg = cimg.astype(np.uint8)
         cimg = cv2.applyColorMap(cimg, cv2.COLORMAP_JET)
 
-        cv2.imshow("depth", cimg)
+        #cv2.imshow("depth", cimg)
 
     def showcolor(self, input_color_img):
        
         img_out = input_color_img.copy()
         output, dictout = self.pose_estimation(img_out)#, cv2.aruco.DICT_4X4_50, self.detector.k, self.detector.d)
-        cv2.imshow("color", output)
+        #cv2.imshow("color", output)
 
         return dictout
 
@@ -330,14 +352,43 @@ class FakeBoard:
             '26':11
         }
         self.tm = TransformManager()
+        self.tm = self.grid_transforms(self.tm)
+
+    def grid_transforms(self, in_stuff):
+        AA = 0.0196
+        aaa = [     2,    3,     4,    5,    6,    8,    9,   10,   11,   12,   13]
+        bbb = [  4*AA, 8*AA,  2*AA, 6*AA,    0, 8*AA, 2*AA, 6*AA,    0, 4*AA, 8*AA]
+        ccc = [     0,    0,  3*AA, 3*AA, 6*AA, 6*AA, 9*AA, 9*AA,12*AA,12*AA,12*AA]
+
+        rr_m_temp = np.identity(3)
+
+        for zzz, yyy, xxx in  zip(aaa, bbb, ccc):
+            #print(yyy, xxx)
+
+            tt_v_temp = np.array([-yyy, xxx, 0])
+
+            xx_to_cam = pt.transform_from(rr_m_temp,tt_v_temp)
+            in_stuff.add_transform(str(zzz), str(1), xx_to_cam)
+
+
+        #print('fdghjkl')
+        in_stuff.check_consistency()
+        #print(in_stuff.check_consistency())
+        return in_stuff
+        
 
     def do_stuff(self, in_stuff):
         f=14
+        button = False
         print(*in_stuff.keys())
+
+        #in_stuff = self.grid_transforms(in_stuff)
 
         
         #tm.add_transform("marker x", "cam", marker2cam)
         for ckey in in_stuff.keys():
+            if not button:
+                button = True
             aa, bb = in_stuff[ckey]
             rr_v_to_consider = aa[0][0]
             tt_v_to_consider = bb[0][0]
@@ -350,8 +401,34 @@ class FakeBoard:
             #print('---')
             #print(rr_m_to_consider)
             #print('---')
+            #print(pp)
+            #print('---')
+            #print(ckey)
+            #print('---')
             xx_to_cam = pt.transform_from(rr_m_to_consider,tt_v_to_consider)
-            self.tm.add_transform(ckey, "cam", xx_to_cam)
+            #self.tm.add_transform(ckey, "cam", xx_to_cam)
+            self.tm.add_transform("cam", ckey, xx_to_cam)
+            self.tm.check_consistency()
+        
+        
+        #if button:
+            #plt.figure(figsize=(10, 5))
+
+            #self.ax = make_3d_axis(2, 121)
+            #self.ax = self.tm.plot_frames_in("cam", ax=self.ax, alpha=0.6)
+            #self.ax.view_init(30, 20)
+
+            #self.ax = make_3d_axis(3, 122)
+            #self.ax = self.tm.plot_frames_in("A", ax=ax, alpha=0.6)
+            #self.ax.view_init(30, 20)
+
+            #plt.show()
+        
+        #print(self.tm.check_consistency())
+        self.tm.check_consistency()
+        self.tm.write_png('./graph.png')
+        return self.tm, button
+
 
 
 
@@ -368,24 +445,136 @@ class Experiment:
         self.c_board = FakeBoard() 
 
     def run(self):    
-        gui.Application.instance.initialize()
+        
+        #gui.Application.instance.initialize()
 
-        self.window = gui.Application.instance.create_window('3d', width=640, height=480)
+        #self.window = gui.Application.instance.create_window('3d', width=640, height=480)
+        #self.widget = gui.SceneWidget()
+        #self.widget.scene = rendering.Open3DScene(self.window.renderer)
+        #self.window.add_child(self.widget)
+
+        self.thread_main()
         threading.Thread(target=self.thread_main).start()
-        gui.Application.instance.run()
+        #gui.Application.instance.run()
 
     def update_geometry(self):
         f=14
 
     def thread_main(self):
+        plt.ion()
+        fig = plt.figure(figsize=(10, 5))
+        ax1 = fig.add_subplot(121,projection='3d')
+        ax2 = fig.add_subplot(122,projection='3d')
+
+        #ax = make_3d_axis(2, 121)
+        
+        #ax.view_init(30, 20)
+
+        #ax = make_3d_axis(3, 122)
+        
+        #ax.view_init(30, 20)
+
+        
+
         while True:
             current_color, current_depth = self.c_camera.getimgs()
             self.c_detector.showdepth(current_depth)
             current_det_dict = self.c_detector.showcolor(current_color)
-            self.c_board.do_stuff(current_det_dict)
+            herehere, therethere = self.c_board.do_stuff(current_det_dict)
+
+            if therethere:
+                #ax = fig.add_subplot(projection='3d')
+                ax1 = fig.add_subplot(121,projection='3d')
+                ax2 = fig.add_subplot(122,projection='3d')
+
+                
+                #ax = make_3d_axis(2, 121)
+                #ax.view_init(30, 20)
+
+                for itr in current_det_dict.keys():
+                    #print(itr)
+                    #ee2object = herehere.get_transform(str(itr), "cam")
+                    #print('sss')
+                    #print(itr)
+                    #print((itr == '1'))
+
+                    ax2 = herehere.plot_frames_in("1", ax=ax2, alpha=0.6, s=0.01)
+                    ax2.view_init(elev=90, azim=-90)
+                    ax2.set_xlim((-0.1, 0.2))
+                    ax2.set_ylim((-0.1, 0.4))
+                    ax2.set_zlim((0, 0.4))
+
+                    ax1 = herehere.plot_frames_in("1", ax=ax1, alpha=0.6, s=0.01)
+                    ax1.view_init(elev=0., azim=-90)
+                    ax1.set_xlim((-0.1, 0.2))
+                    ax1.set_ylim((-0.1, 0.4))
+                    ax1.set_zlim((0, 0.4))
+                    
+
+                    '''
+                    if not (itr == '1'):
+                        a='a'
+                        #ee2object = herehere.get_transform(str(itr), "1")
+                        #ee2object = herehere.get_transform("cam", str(itr))
+                        #origin_of_A_pos = pt.vector_to_point([0, 0, 0])
+                        #kcdo = pt.transform(ee2object, origin_of_A_pos)[:-1]
+
+                        kcdo = pt.vector_to_point([0, 0, 0])
+
+
+
+                        object2ref = herehere.get_transform(str(itr), "1")
+                        #object2ref = herehere.get_transform("1", str(itr))
+                        kcd = pt.transform(object2ref, pt.vector_to_point([kcdo[0],kcdo[1],kcdo[2]]))[:-1]
+
+                        #print(origin_of_A_in_B_xyz)
+                        #plt.scatter(kcd[0],kcd[1],kcd[2])
+                        ax.scatter(kcd[0],kcd[1], kcd[2], marker='^')
+                        #plt.scatter(kcd[0],kcd[1], marker='x')
+                        #plt.axis('equal')
+                        #plt.xlim(-0.02, 0.05)
+                        #plt.ylim(-0.3, 0.1)
+                        #ax.set_xlim((-0.5, 0.5))
+                        #ax.set_ylim((-0.5, 0.5))
+                        #ax.set_zlim((0.0, .3))
+                    else:
+                        a='a'
+                        ee2object = herehere.get_transform("cam", "1")
+                        origin_of_A_pos = pt.vector_to_point([0, 0, 0])
+                        pkk = pt.transform(ee2object, origin_of_A_pos)[:-1]
+                        #plt.scatter(pkk[0],pkk[1],pkk[2])
+                        print((pkk[0],pkk[1],pkk[2]))
+
+                        AA = 0.0196
+                        BB = 1
+                        aaa = [     2,    3,     4,    5,    6,    8,    9,   10,   11,   12,   13]
+                        bbb = [  4*AA, 8*AA,  2*AA, 6*AA,    0, 8*AA, 2*AA, 6*AA,    0, 4*AA, 8*AA]
+                        ccc = [     0,    0,  3*AA, 3*AA, 6*AA, 6*AA, 9*AA, 9*AA,12*AA,12*AA,12*AA]
+                        ddd = [     0,    0,     0,    0,    0,    0,    0,    0,    0,    0,    0]
+                        eee = [    BB,   BB,    BB,   BB,   BB,   BB,   BB,   BB,   BB,   BB,   BB]
+
+                        for pp,oo,ii,uu in zip(bbb, ccc, ddd, eee):
+                            print(';;;;;')
+                            print(pp,oo,ii,uu)
+                            ax.scatter(pp, oo, ii, marker='o')                        
+                        #plt.scatter(np.array(ccc).T,np.array(bbb).T,np.array(ddd).T)
+                        #plt.scatter(pkk[0],-pkk[1], marker='*')
+                        #plt.axis('equal')
+                        #print(origin_of_A_in_B_xyz)
+                        #ax.scatter(origin_of_A_in_B_xyz[0],origin_of_A_in_B_xyz[1],origin_of_A_in_B_xyz[2])
+                    '''
+
+                #ax = herehere.plot_frames_in("cam", ax=ax, alpha=0.6, s=10)
+                
             #print(current_det_dict)
-            gui.Application.instance.post_to_main_thread(self.window, self.update_geometry)
-            kk = cv2.waitKey(30)
+            #gui.Application.instance.post_to_main_thread(self.window, self.update_geometry)
+            #kk = cv2.waitKey(30)
+                #plt.ion()
+                #plt.show()
+                fig.canvas.draw()
+                fig.canvas.flush_events()
+                plt.pause(0.1)
+                plt.clf()
 
 if __name__ == "__main__":
     probetrial = Experiment()
